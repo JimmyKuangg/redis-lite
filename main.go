@@ -19,8 +19,21 @@ func main() {
 			continue
 		}
 
-		fmt.Println("Client connected")
+		go handleConnection(conn)
+	}
+}
 
-		conn.Close()
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	buffer := make([]byte, 1024)
+
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			return
+		}
+
+		fmt.Println(string(buffer[:n]))
 	}
 }
