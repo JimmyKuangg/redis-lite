@@ -1,6 +1,9 @@
 package data
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	ErrKeyNotFound = errors.New("key does not exist")
@@ -27,4 +30,10 @@ func (db *Database) Delete(key string) error {
 
 	delete(db.data, key)
 	return nil
+}
+
+func (db *Database) Print() {
+	for key, val := range db.data {
+		fmt.Printf("Key: %s, Val: %s", key, val)
+	}
 }

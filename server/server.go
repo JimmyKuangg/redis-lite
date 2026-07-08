@@ -39,6 +39,11 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-		fmt.Println(string(buffer[:n]))
+		input := string(buffer[:n])
+		_, err = ParseCommand(input)
+		if err != nil {
+			conn.Write([]byte(err.Error()))
+			return
+		}
 	}
 }
