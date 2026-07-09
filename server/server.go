@@ -23,12 +23,12 @@ func NewServer() (*Server, error) {
 }
 
 func (s *Server) Start() {
-	listener, err := net.Listen("tcp", ":6379")
+	err := storage.Replay(s.db)
 	if err != nil {
 		panic(err)
 	}
 
-	err = storage.Replay(s.db)
+	listener, err := net.Listen("tcp", ":6379")
 	if err != nil {
 		panic(err)
 	}
