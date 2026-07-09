@@ -4,16 +4,21 @@ import (
 	"fmt"
 	"net"
 	"redis-lite/data"
+	"redis-lite/storage"
 )
 
 type Server struct {
 	db *data.Database
 }
 
-func NewServer() *Server {
+func NewServer() (*Server, error) {
+	if err := storage.Init(); err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		db: data.NewDatabase(),
-	}
+	}, nil
 }
 
 func (s *Server) Start() {
