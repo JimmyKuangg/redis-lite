@@ -71,7 +71,7 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 		}
 
 	case "PRINT":
-		db.Print()
+		return db.Print(), nil
 	}
 
 	return "", fmt.Errorf("unknown command: %s", cmd.Name)

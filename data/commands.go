@@ -3,6 +3,8 @@ package data
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 )
 
 var (
@@ -32,8 +34,22 @@ func (db *Database) Delete(key string) error {
 	return nil
 }
 
-func (db *Database) Print() {
-	for key, val := range db.data {
-		fmt.Printf("Key: %s, Val: %s", key, val)
+func (db *Database) Print() string {
+	keys := make([]string, 0, len(db.data))
+
+	for key := range db.data {
+		keys = append(keys, key)
 	}
+
+	sort.Strings(keys)
+
+	var builder strings.Builder
+
+	for _, key := range keys {
+		val := db.data[key]
+
+		fmt.Fprintf(&builder, "Key: %s, Val: %s\n", key, val)
+	}
+
+	return builder.String()
 }
