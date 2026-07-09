@@ -68,3 +68,10 @@ func (db *Database) MGet(keys []string) map[string]string {
 
 	return results
 }
+
+func (cmd Command) String() string {
+	return strings.Join(
+		append([]string{cmd.Name}, cmd.Args...),
+		" ",
+	)
+}

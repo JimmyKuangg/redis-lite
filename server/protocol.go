@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"redis-lite/data"
+	"redis-lite/storage"
 	"strings"
 )
 
@@ -49,6 +50,8 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 		}
 
 		db.Set(cmd.Args[0], cmd.Args[1])
+
+		storage.Append(cmd.String())
 		return "OK", nil
 
 	case "MSET":
@@ -60,6 +63,7 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 			db.Set(cmd.Args[i], cmd.Args[i+1])
 		}
 
+		storage.Append(cmd.String())
 		return "OK", nil
 
 	case "DEL":
@@ -81,6 +85,8 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 			}
 		}
 
+		storage.Append(cmd.String())
+		return "", nil
 	case "PRINT":
 		return db.Print(), nil
 
