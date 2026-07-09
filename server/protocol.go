@@ -32,13 +32,24 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 		resp, err := db.Get(cmd.Args[0])
 		return resp, err
 
+	case "MGET":
+		values := db.MGet(cmd.Args)
+
+		var builder strings.Builder
+
+		for key, val := range values {
+			fmt.Fprintf(&builder, "%s: %s\n", key, val)
+		}
+
+		return builder.String(), nil
+
 	case "SET":
 		if len(cmd.Args) != 2 {
 			return "", errors.New("SET expects a key and a value")
 		}
 
 		db.Set(cmd.Args[0], cmd.Args[1])
-		return "success", nil
+		return "OK", nil
 
 	case "MSET":
 		if len(cmd.Args) == 0 || len(cmd.Args)%2 != 0 {
@@ -49,29 +60,32 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 			db.Set(cmd.Args[i], cmd.Args[i+1])
 		}
 
-		return "success", nil
+		return "OK", nil
 
 	case "DEL":
-		if len(cmd.Args) != 1 {
-			return "", errors.New("DEL expects exactly one key")
+		if len(cmd.Args) < 1 {
+			return "", errors.New("DEL expects at least one key")
 		}
 
 		for _, arg := range cmd.Args {
 			_, err := db.Get(arg)
 			if err != nil {
-				return "", fmt.Errorf("error in DELETE, %w", err)
+				return "", fmt.Errorf("error in DEL, %w", err)
 			}
 		}
 
 		for _, arg := range cmd.Args {
 			err := db.Delete(arg)
 			if err != nil {
-				return "", fmt.Errorf("error in DELETE, %w", err)
+				return "", fmt.Errorf("error in DEL, %w", err)
 			}
 		}
 
 	case "PRINT":
 		return db.Print(), nil
+
+	case "PING":
+		return "PONG", nil
 	}
 
 	return "", fmt.Errorf("unknown command: %s", cmd.Name)
