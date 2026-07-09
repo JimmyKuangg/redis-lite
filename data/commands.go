@@ -53,3 +53,18 @@ func (db *Database) Print() string {
 
 	return builder.String()
 }
+
+func (db *Database) MGet(keys []string) map[string]string {
+	results := make(map[string]string)
+
+	for _, key := range keys {
+		val, err := db.Get(key)
+		if err == nil {
+			results[key] = val
+		} else {
+			results[key] = "nil"
+		}
+	}
+
+	return results
+}
