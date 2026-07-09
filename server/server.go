@@ -10,7 +10,13 @@ type Server struct {
 	db *data.Database
 }
 
-func Start() {
+func NewServer() *Server {
+	return &Server{
+		db: data.NewDatabase(),
+	}
+}
+
+func (s *Server) Start() {
 	listener, err := net.Listen("tcp", ":6379")
 	if err != nil {
 		panic(err)
@@ -24,11 +30,11 @@ func Start() {
 			continue
 		}
 
-		go handleConnection(conn)
+		go s.handleConnection(conn)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	buffer := make([]byte, 1024)
@@ -40,10 +46,24 @@ func handleConnection(conn net.Conn) {
 		}
 
 		input := string(buffer[:n])
-		_, err = ParseCommand(input)
-		if err != nil {
-			conn.Write([]byte(err.Error()))
+		response := s.handleRequest(input)
+
+		if err := WriteResponse(conn, response); err != nil {
 			return
 		}
 	}
+}
+
+func (s *Server) handleRequest(input string) string {
+	cmd, err := ParseCommand(input)
+	if err != nil {
+		return err.Error()
+	}
+
+	resp, err := ExecuteCommand(s.db, cmd)
+	if err != nil {
+		return err.Error()
+	}
+
+	return resp
 }
