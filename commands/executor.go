@@ -1,4 +1,4 @@
-package server
+package commands
 
 import (
 	"errors"
@@ -6,21 +6,6 @@ import (
 	"redis-lite/data"
 	"strings"
 )
-
-func ParseCommand(input string) (data.Command, error) {
-	var command data.Command
-
-	args := strings.Fields(input)
-
-	if len(args) == 0 {
-		return command, fmt.Errorf("Please enter a command")
-	}
-
-	return data.Command{
-		Name: strings.ToUpper((args[0])),
-		Args: args[1:],
-	}, nil
-}
 
 func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 	switch cmd.Name {
@@ -49,6 +34,7 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 		}
 
 		db.Set(cmd.Args[0], cmd.Args[1])
+
 		return "OK", nil
 
 	case "MSET":
@@ -81,6 +67,7 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 			}
 		}
 
+		return "", nil
 	case "PRINT":
 		return db.Print(), nil
 

@@ -3,20 +3,31 @@ package server
 import (
 	"fmt"
 	"net"
+	"redis-lite/commands"
 	"redis-lite/data"
+	"redis-lite/storage"
 )
 
 type Server struct {
 	db *data.Database
 }
 
-func NewServer() *Server {
+func NewServer() (*Server, error) {
+	if err := storage.Init(); err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		db: data.NewDatabase(),
-	}
+	}, nil
 }
 
 func (s *Server) Start() {
+	err := storage.Replay(s.db)
+	if err != nil {
+		panic(err)
+	}
+
 	listener, err := net.Listen("tcp", ":6379")
 	if err != nil {
 		panic(err)
@@ -55,14 +66,18 @@ func (s *Server) handleConnection(conn net.Conn) {
 }
 
 func (s *Server) handleRequest(input string) string {
-	cmd, err := ParseCommand(input)
+	cmd, err := commands.ParseCommand(input)
 	if err != nil {
 		return err.Error()
 	}
 
-	resp, err := ExecuteCommand(s.db, cmd)
+	resp, err := commands.ExecuteCommand(s.db, cmd)
 	if err != nil {
 		return err.Error()
+	}
+
+	if commands.IsWriteCommand(cmd) {
+		storage.Append(cmd.String())
 	}
 
 	return resp
