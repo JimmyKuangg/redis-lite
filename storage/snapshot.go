@@ -7,9 +7,15 @@ import (
 	"path/filepath"
 	"redis-lite/data"
 	"strings"
+	"sync"
 )
 
+var storageMu sync.Mutex
+
 func WriteSnapshot(snapshot map[string]string) error {
+	storageMu.Lock()
+	defer storageMu.Unlock()
+
 	snapshotPath := filepath.Join(storageDir, snapshotFile)
 	file, err := os.OpenFile(snapshotPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
