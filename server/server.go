@@ -9,7 +9,8 @@ import (
 )
 
 type Server struct {
-	db *data.Database
+	db         *data.Database
+	writeCount int
 }
 
 func NewServer() (*Server, error) {
@@ -77,7 +78,20 @@ func (s *Server) handleRequest(input string) string {
 	}
 
 	if commands.IsWriteCommand(cmd) {
-		storage.Append(cmd.String())
+		if err := storage.Append(cmd.String()); err != nil {
+			return err.Error()
+		}
+
+		s.writeCount++
+	}
+
+	if s.writeCount >= 10 {
+		err := storage.TakeSnapshot(s.db)
+		if err != nil {
+			return err.Error()
+		}
+
+		s.writeCount = 0
 	}
 
 	return resp
