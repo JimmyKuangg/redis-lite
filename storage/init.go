@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	storageDir = ".redislite"
-	aofFile    = "appendonly.aof"
+	storageDir   = ".redislite"
+	aofFile      = "appendonly.aof"
+	snapshotFile = "snapshot.rdb"
 )
 
 func Init() error {
@@ -18,13 +19,29 @@ func Init() error {
 	}
 
 	aofPath := filepath.Join(storageDir, aofFile)
+	snapshotPath := filepath.Join(storageDir, snapshotFile)
+
+	err = ensureFile(aofPath)
+	if err != nil {
+		return fmt.Errorf("creating  AOF: %w", err)
+	}
+
+	err = ensureFile(snapshotPath)
+	if err != nil {
+		return fmt.Errorf("creating snapshot: %w", err)
+	}
+
+	return nil
+}
+
+func ensureFile(path string) error {
 	file, err := os.OpenFile(
-		aofPath,
-		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+		path,
+		os.O_CREATE|os.O_RDWR,
 		0644,
 	)
 	if err != nil {
-		return fmt.Errorf("error with log file: %w", err)
+		return fmt.Errorf("error during init: %w", err)
 	}
 	defer file.Close()
 
