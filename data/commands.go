@@ -69,9 +69,25 @@ func (db *Database) MGet(keys []string) map[string]string {
 	return results
 }
 
+// Utility functions
+
 func (cmd Command) String() string {
 	return strings.Join(
 		append([]string{cmd.Name}, cmd.Args...),
 		" ",
 	)
+}
+
+func (db *Database) Snapshot() map[string]string {
+	copy := make(map[string]string)
+
+	for k, v := range db.data {
+		copy[k] = v
+	}
+
+	return copy
+}
+
+func (db *Database) Restore(snapshot map[string]string) {
+	db.data = snapshot
 }

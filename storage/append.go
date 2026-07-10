@@ -13,7 +13,6 @@ func Append(command string) error {
 		os.O_APPEND|os.O_WRONLY,
 		0644,
 	)
-
 	if err != nil {
 		return err
 	}
