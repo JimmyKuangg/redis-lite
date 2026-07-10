@@ -6,6 +6,9 @@ import (
 )
 
 func Append(command string) error {
+	storageMu.Lock()
+	defer storageMu.Unlock()
+
 	aofPath := filepath.Join(storageDir, aofFile)
 
 	file, err := os.OpenFile(

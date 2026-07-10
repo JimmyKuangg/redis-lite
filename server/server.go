@@ -24,7 +24,14 @@ func NewServer() (*Server, error) {
 }
 
 func (s *Server) Start() {
-	err := storage.Replay(s.db)
+	snapshot, err := storage.LoadSnapshot()
+	if err != nil {
+		panic(err)
+	}
+
+	s.db.Restore(snapshot)
+
+	err = storage.Replay(s.db)
 	if err != nil {
 		panic(err)
 	}
