@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func WriteSnapshot(db *data.Database) error {
+func WriteSnapshot(snapshot map[string]string) error {
 	snapshotPath := filepath.Join(storageDir, snapshotFile)
 	file, err := os.OpenFile(snapshotPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -18,7 +18,7 @@ func WriteSnapshot(db *data.Database) error {
 
 	defer file.Close()
 
-	for key, val := range db.Snapshot() {
+	for key, val := range snapshot {
 		_, err = file.WriteString(key + " " + val + "\n")
 		if err != nil {
 			return err
@@ -28,7 +28,7 @@ func WriteSnapshot(db *data.Database) error {
 	return nil
 }
 
-func LoadSnapshot(db *data.Database) (map[string]string, error) {
+func LoadSnapshot() (map[string]string, error) {
 	snapshotPath := filepath.Join(storageDir, snapshotFile)
 	snapshot := make(map[string]string)
 
@@ -58,7 +58,9 @@ func LoadSnapshot(db *data.Database) (map[string]string, error) {
 }
 
 func TakeSnapshot(db *data.Database) error {
-	err := WriteSnapshot(db)
+	snapshot := db.Snapshot()
+
+	err := WriteSnapshot(snapshot)
 	if err != nil {
 		return err
 	}
