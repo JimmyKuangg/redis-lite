@@ -8,11 +8,6 @@ import (
 	"redis-lite/storage"
 )
 
-type Server struct {
-	db         *data.Database
-	writeCount int
-}
-
 func NewServer() (*Server, error) {
 	if err := storage.Init(); err != nil {
 		return nil, err
@@ -89,16 +84,22 @@ func (s *Server) handleRequest(input string) string {
 			return err.Error()
 		}
 
-		s.writeCount++
-	}
+		s.mu.Lock()
 
-	if s.writeCount >= 10 {
-		err := storage.TakeSnapshot(s.db)
-		if err != nil {
-			return err.Error()
+		s.writeCount++
+		shouldSnapshot := s.writeCount >= 10
+
+		if shouldSnapshot {
+			s.writeCount = 0
 		}
 
-		s.writeCount = 0
+		s.mu.Unlock()
+
+		if shouldSnapshot {
+			if err := storage.TakeSnapshot(s.db); err != nil {
+				return err.Error()
+			}
+		}
 	}
 
 	return resp
