@@ -23,15 +23,29 @@ func (db *Database) Set(key, val string) {
 }
 
 func (db *Database) Get(key string) (string, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	return db.get(key)
+}
+
+func (db *Database) MGet(keys []string) map[string]string {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
-	entry, exists := db.data[key]
-	if !exists {
-		return "", ErrKeyNotFound
+	results := make(map[string]string)
+
+	for _, key := range keys {
+		val, err := db.get(key)
+
+		if err == nil {
+			results[key] = val
+		} else {
+			results[key] = "nil"
+		}
 	}
 
-	return entry.Value, nil
+	return results
 }
 
 func (db *Database) Delete(key string) error {
@@ -45,6 +59,21 @@ func (db *Database) Delete(key string) error {
 
 	delete(db.data, key)
 	return nil
+}
+
+func (db *Database) Expire(key string, duration int) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	expiry := time.Now().Add(time.Duration(duration) * time.Second)
+
+	entry, exists := db.data[key]
+	if !exists {
+		return
+	}
+
+	entry.ExpiresAt = &expiry
+	db.data[key] = entry
 }
 
 func (db *Database) Print() string {
@@ -74,37 +103,21 @@ func (db *Database) Print() string {
 	return builder.String()
 }
 
-func (db *Database) MGet(keys []string) map[string]string {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
+// Unsafes
 
-	results := make(map[string]string)
-
-	for _, key := range keys {
-		val, err := db.Get(key)
-		if err == nil {
-			results[key] = val
-		} else {
-			results[key] = "nil"
-		}
-	}
-
-	return results
-}
-
-func (db *Database) Expire(key string, duration int) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	expiry := time.Now().Add(time.Duration(duration) * time.Second)
-
+func (db *Database) get(key string) (string, error) {
 	entry, exists := db.data[key]
+
 	if !exists {
-		return
+		return "", ErrKeyNotFound
 	}
 
-	entry.ExpiresAt = &expiry
-	db.data[key] = entry
+	if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
+		delete(db.data, key)
+		return "", ErrKeyNotFound
+	}
+
+	return entry.Value, nil
 }
 
 // Utility functions
