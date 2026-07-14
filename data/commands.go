@@ -115,7 +115,9 @@ func (db *Database) Print() string {
 
 	var builder strings.Builder
 
-	for key, entry := range db.data {
+	for _, key := range keys {
+		entry := db.data[key]
+
 		fmt.Fprintf(
 			&builder,
 			"%s => %s, TTL: %v\n",

@@ -17,7 +17,6 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 	storageMu.Lock()
 	defer storageMu.Unlock()
 
-	fmt.Println("Writing to snapshot file")
 	snapshotPath := filepath.Join(storageDir, snapshotFile)
 	file, err := os.OpenFile(snapshotPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -26,6 +25,7 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 
 	defer file.Close()
 
+	fmt.Printf("Writing %d lines to snapshot file...\n", len(snapshot))
 	for key, entry := range snapshot {
 		if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
 			continue
