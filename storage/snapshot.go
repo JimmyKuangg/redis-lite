@@ -8,6 +8,7 @@ import (
 	"redis-lite/data"
 	"strings"
 	"sync"
+	"time"
 )
 
 var storageMu sync.Mutex
@@ -25,6 +26,10 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 	defer file.Close()
 
 	for key, entry := range snapshot {
+		if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
+			continue
+		}
+
 		_, err = file.WriteString(key + " " + entry.Value + "\n")
 		if err != nil {
 			return err

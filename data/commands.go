@@ -11,7 +11,6 @@ import (
 
 var (
 	ErrKeyNotFound = errors.New("key does not exist")
-	ErrKeyExpired  = errors.New("key has expired")
 )
 
 func (db *Database) Set(key, val string) {
@@ -163,6 +162,26 @@ func (db *Database) Restore(snapshot map[string]Entry) {
 	defer db.mu.Unlock()
 
 	db.data = snapshot
+}
+
+func (db *Database) CleanupExpired() {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	var deletedCount int
+
+	for key, entry := range db.data {
+		if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
+			delete(db.data, key)
+			deletedCount++
+		}
+	}
+
+	fmt.Printf(
+		"Cleanup finished at %s. Deleted %d entries\n",
+		time.Now().Format(time.TimeOnly),
+		deletedCount,
+	)
 }
 
 // Command utility
