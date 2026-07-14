@@ -25,6 +25,7 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 
 	defer file.Close()
 
+	fmt.Printf("Writing %d lines to snapshot file...\n", len(snapshot))
 	for key, entry := range snapshot {
 		if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
 			continue
@@ -36,6 +37,7 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 		}
 	}
 
+	fmt.Println("Finished writing to snapshot file")
 	return nil
 }
 
@@ -52,6 +54,7 @@ func LoadSnapshot() (map[string]data.Entry, error) {
 
 	scanner := bufio.NewScanner(file)
 
+	fmt.Println("Loading snapshot...")
 	for scanner.Scan() {
 		args := strings.Split(scanner.Text(), " ")
 		if len(args) != 2 {
@@ -67,6 +70,7 @@ func LoadSnapshot() (map[string]data.Entry, error) {
 		return snapshot, err
 	}
 
+	fmt.Printf("Snapshot loaded. Restored %d entries\n", len(snapshot))
 	return snapshot, nil
 }
 

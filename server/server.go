@@ -112,6 +112,8 @@ func (s *Server) handleRequest(input string) string {
 func (s *Server) StartCleanupWorker() {
 	ticker := time.NewTicker(10 * time.Second)
 
+	fmt.Println("Cleanup worker started")
+
 	go func() {
 		defer ticker.Stop()
 
@@ -121,6 +123,7 @@ func (s *Server) StartCleanupWorker() {
 				s.db.CleanupExpired()
 
 			case <-s.stop:
+				fmt.Println("Cleanup worker stopping...")
 				return
 			}
 		}
