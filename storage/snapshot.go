@@ -54,6 +54,7 @@ func LoadSnapshot() (map[string]data.Entry, error) {
 
 	scanner := bufio.NewScanner(file)
 
+	fmt.Println("Loading snapshot...")
 	for scanner.Scan() {
 		args := strings.Split(scanner.Text(), " ")
 		if len(args) != 2 {
@@ -69,6 +70,7 @@ func LoadSnapshot() (map[string]data.Entry, error) {
 		return snapshot, err
 	}
 
+	fmt.Printf("Snapshot loaded. Restored %d entries\n", len(snapshot))
 	return snapshot, nil
 }
 
