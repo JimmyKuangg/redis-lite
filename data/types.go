@@ -1,9 +1,17 @@
 package data
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
+
+type Entry struct {
+	Value     string
+	ExpiresAt *time.Time
+}
 
 type Database struct {
-	data map[string]string
+	data map[string]Entry
 	mu   sync.RWMutex
 }
 

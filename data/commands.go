@@ -3,8 +3,10 @@ package data
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
+	"time"
 )
 
 var (
@@ -15,19 +17,21 @@ func (db *Database) Set(key, val string) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	db.data[key] = val
+	db.data[key] = Entry{
+		Value: val,
+	}
 }
 
 func (db *Database) Get(key string) (string, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
-	val, exists := db.data[key]
+	entry, exists := db.data[key]
 	if !exists {
 		return "", ErrKeyNotFound
 	}
 
-	return val, nil
+	return entry.Value, nil
 }
 
 func (db *Database) Delete(key string) error {
@@ -57,10 +61,14 @@ func (db *Database) Print() string {
 
 	var builder strings.Builder
 
-	for _, key := range keys {
-		val := db.data[key]
-
-		fmt.Fprintf(&builder, "Key: %s, Val: %s\n", key, val)
+	for key, entry := range db.data {
+		fmt.Fprintf(
+			&builder,
+			"%s => %s, TTL: %v\n",
+			key,
+			entry.Value,
+			entry.ExpiresAt,
+		)
 	}
 
 	return builder.String()
@@ -84,22 +92,34 @@ func (db *Database) MGet(keys []string) map[string]string {
 	return results
 }
 
+func (db *Database) Expire(key string, duration int) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	expiry := time.Now().Add(time.Duration(duration) * time.Second)
+
+	entry, exists := db.data[key]
+	if !exists {
+		return
+	}
+
+	entry.ExpiresAt = &expiry
+	db.data[key] = entry
+}
+
 // Utility functions
 
-func (db *Database) Snapshot() map[string]string {
+func (db *Database) Snapshot() map[string]Entry {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
-	copy := make(map[string]string)
+	snapshot := make(map[string]Entry)
+	maps.Copy(snapshot, db.data)
 
-	for k, v := range db.data {
-		copy[k] = v
-	}
-
-	return copy
+	return snapshot
 }
 
-func (db *Database) Restore(snapshot map[string]string) {
+func (db *Database) Restore(snapshot map[string]Entry) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
