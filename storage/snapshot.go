@@ -17,6 +17,7 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 	storageMu.Lock()
 	defer storageMu.Unlock()
 
+	fmt.Println("Writing to snapshot file")
 	snapshotPath := filepath.Join(storageDir, snapshotFile)
 	file, err := os.OpenFile(snapshotPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -36,6 +37,7 @@ func WriteSnapshot(snapshot map[string]data.Entry) error {
 		}
 	}
 
+	fmt.Println("Finished writing to snapshot file")
 	return nil
 }
 
