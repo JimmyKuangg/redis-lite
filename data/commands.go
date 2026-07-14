@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrKeyNotFound = errors.New("key does not exist")
+	ErrKeyExpired  = errors.New("key has expired")
 )
 
 func (db *Database) Set(key, val string) {
@@ -26,20 +27,25 @@ func (db *Database) Get(key string) (string, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	return db.get(key)
+	entry, err := db.get(key)
+	if err != nil {
+		return "", err
+	}
+
+	return entry.Value, nil
 }
 
 func (db *Database) MGet(keys []string) map[string]string {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
+	db.mu.Lock()
+	defer db.mu.Unlock()
 
 	results := make(map[string]string)
 
 	for _, key := range keys {
-		val, err := db.get(key)
+		entry, err := db.get(key)
 
 		if err == nil {
-			results[key] = val
+			results[key] = entry.Value
 		} else {
 			results[key] = "nil"
 		}
@@ -76,6 +82,26 @@ func (db *Database) Expire(key string, duration int) {
 	db.data[key] = entry
 }
 
+func (db *Database) TTL(key string) (string, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	var expiry string
+
+	entry, err := db.get(key)
+	if err != nil {
+		return "", err
+	}
+
+	if entry.ExpiresAt == nil {
+		return "no expiry", nil
+	}
+
+	expiry = time.Until(*entry.ExpiresAt).String()
+
+	return expiry, nil
+}
+
 func (db *Database) Print() string {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
@@ -105,19 +131,19 @@ func (db *Database) Print() string {
 
 // Unsafes
 
-func (db *Database) get(key string) (string, error) {
+func (db *Database) get(key string) (Entry, error) {
 	entry, exists := db.data[key]
 
 	if !exists {
-		return "", ErrKeyNotFound
+		return Entry{}, ErrKeyNotFound
 	}
 
 	if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
 		delete(db.data, key)
-		return "", ErrKeyNotFound
+		return Entry{}, ErrKeyNotFound
 	}
 
-	return entry.Value, nil
+	return entry, nil
 }
 
 // Utility functions
