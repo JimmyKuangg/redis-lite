@@ -19,7 +19,9 @@ func Replay(db *data.Database) error {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	var cmdsRan int
 
+	fmt.Println("Replaying AOF...")
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -32,7 +34,10 @@ func Replay(db *data.Database) error {
 		if err != nil {
 			return fmt.Errorf("error executing command: %w", err)
 		}
+
+		cmdsRan++
 	}
 
+	fmt.Printf("AOF replay complete. %d commands applied\n", cmdsRan)
 	return scanner.Err()
 }
