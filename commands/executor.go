@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"redis-lite/data"
+	"strconv"
 	"strings"
 )
 
@@ -68,6 +69,26 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 		}
 
 		return "", nil
+
+	case "EXPIRE":
+		if len(cmd.Args) != 2 {
+			return "", errors.New("EXPIRE requires key and duration in seconds")
+		}
+
+		key := cmd.Args[0]
+		seconds, err := strconv.Atoi(cmd.Args[1])
+		if err != nil {
+			return "", fmt.Errorf("error parsing duration: %w", err)
+		}
+
+		_, err = db.Get(key)
+		if err != nil {
+			return "", fmt.Errorf("error in EXPIRE, %w", err)
+		}
+
+		db.Expire(key, seconds)
+		return "OK", nil
+
 	case "PRINT":
 		return db.Print(), nil
 

@@ -6,6 +6,7 @@ import (
 	"redis-lite/commands"
 	"redis-lite/data"
 	"redis-lite/storage"
+	"time"
 )
 
 func NewServer() (*Server, error) {
@@ -30,6 +31,9 @@ func (s *Server) Start() {
 	if err != nil {
 		panic(err)
 	}
+
+	s.StartCleanupWorker()
+	defer s.Stop()
 
 	listener, err := net.Listen("tcp", ":6379")
 	if err != nil {
@@ -103,4 +107,26 @@ func (s *Server) handleRequest(input string) string {
 	}
 
 	return resp
+}
+
+func (s *Server) StartCleanupWorker() {
+	ticker := time.NewTicker(10 * time.Second)
+
+	go func() {
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				s.db.CleanupExpired()
+
+			case <-s.stop:
+				return
+			}
+		}
+	}()
+}
+
+func (s *Server) Stop() {
+	s.stop <- struct{}{}
 }

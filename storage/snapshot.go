@@ -8,11 +8,12 @@ import (
 	"redis-lite/data"
 	"strings"
 	"sync"
+	"time"
 )
 
 var storageMu sync.Mutex
 
-func WriteSnapshot(snapshot map[string]string) error {
+func WriteSnapshot(snapshot map[string]data.Entry) error {
 	storageMu.Lock()
 	defer storageMu.Unlock()
 
@@ -24,8 +25,12 @@ func WriteSnapshot(snapshot map[string]string) error {
 
 	defer file.Close()
 
-	for key, val := range snapshot {
-		_, err = file.WriteString(key + " " + val + "\n")
+	for key, entry := range snapshot {
+		if entry.ExpiresAt != nil && time.Now().After(*entry.ExpiresAt) {
+			continue
+		}
+
+		_, err = file.WriteString(key + " " + entry.Value + "\n")
 		if err != nil {
 			return err
 		}
@@ -34,9 +39,9 @@ func WriteSnapshot(snapshot map[string]string) error {
 	return nil
 }
 
-func LoadSnapshot() (map[string]string, error) {
+func LoadSnapshot() (map[string]data.Entry, error) {
 	snapshotPath := filepath.Join(storageDir, snapshotFile)
-	snapshot := make(map[string]string)
+	snapshot := make(map[string]data.Entry)
 
 	file, err := os.Open(snapshotPath)
 	if err != nil {
@@ -53,7 +58,9 @@ func LoadSnapshot() (map[string]string, error) {
 			return snapshot, fmt.Errorf("invalid snapshot line: %q", scanner.Text())
 		}
 
-		snapshot[args[0]] = args[1]
+		snapshot[args[0]] = data.Entry{
+			Value: args[1],
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
