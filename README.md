@@ -195,7 +195,7 @@ The cleanup worker logic flow -
                   │
                   ▼
         +----------------------+
-        | Lock Database         |
+        | Lock Database        |
         +----------------------+
                   │
                   ▼
