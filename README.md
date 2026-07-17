@@ -80,6 +80,142 @@ key does not exist
 # This applies for both Windows and Mac
 ```
 
+## How it Works
+
+Overall structure of the project -
+
+```bash
+                     RedisLite
+
+                +-----------------+
+                |     Clients     |
+                | (nc / programs) |
+                +--------+--------+
+                         |
+                    TCP :6379
+                         |
+                         ▼
+                +-----------------+
+                |     Server      |
+                | Parse & Execute |
+                +--------+--------+
+                         |
+                         ▼
+                +-----------------+
+                | In-Memory Store |
+                | map[string]Entry|
+                +---+---------+---+
+                    |         |
+          Read/Write|         |Snapshots
+                    |         |
+                    ▼         ▼
+             +----------+  +----------+
+             |   AOF    |  |   RDB    |
+             +----------+  +----------+
+
+          Background TTL Cleanup Worker
+                (Every 10 Seconds)
+```
+
+Multiple things happen upon server startup -
+
+```bash
+                  go run .
+                      │
+                      ▼
+        +----------------------------+
+        |      Load Snapshot         |
+        |     (.redislite/rdb)       |
+        +----------------------------+
+                      │
+                      ▼
+        +----------------------------+
+        |       Restore Data         |
+        |    Into Memory (HashMap)   |
+        +----------------------------+
+                      │
+                      ▼
+        +----------------------------+
+        |        Replay AOF          |
+        |    (.redislite/aof)        |
+        +----------------------------+
+                      │
+                      ▼
+        +----------------------------+
+        | Start Cleanup Worker (TTL) |
+        |    Runs Every 10 Seconds   |
+        +----------------------------+
+                      │
+                      ▼
+        +----------------------------+
+        | Listen on TCP :6379        |
+        | Wait for Client Requests   |
+        +----------------------------+
+                      │
+                      ▼
+              Ready to Accept Clients
+```
+
+Whenever you enter a CLI command, this the flow of the commands -
+
+```bash
+        nc localhost 6379
+                │
+                ▼
+        +----------------+
+        | TCP Connection |
+        +----------------+
+                │
+                ▼
+        +----------------+
+        | Parse Command  |
+        +----------------+
+                │
+                ▼
+        +----------------+
+        | Execute Logic  |
+        +----------------+
+                │
+                ▼
+        +----------------+
+        | Database (RAM) |
+        +----------------+
+                │
+         ┌──────┴────────┐
+         │               │
+         ▼               ▼
+ Return Response    Append to AOF
+   To Client         (if modified)
+```
+
+The cleanup worker logic flow -
+
+```bash
+           Every 10 Seconds
+                  │
+                  ▼
+        +----------------------+
+        | Lock Database         |
+        +----------------------+
+                  │
+                  ▼
+        +----------------------+
+        | Scan All Entries     |
+        +----------------------+
+                  │
+                  ▼
+        +----------------------+
+        | Expired?             |
+        +----------------------+
+           │             │
+        Yes│             │No
+           ▼             ▼
+     Delete Entry     Keep Entry
+           │
+           ▼
+      Unlock Database
+```
+
 ## Project Structure
 
 `.redislite/`
