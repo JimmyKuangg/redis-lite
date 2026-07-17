@@ -68,7 +68,7 @@ func ExecuteCommand(db *data.Database, cmd data.Command) (string, error) {
 			}
 		}
 
-		return "", nil
+		return "OK", nil
 
 	case "EXPIRE":
 		if len(cmd.Args) != 2 {

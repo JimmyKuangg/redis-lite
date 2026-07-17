@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"redis-lite/commands"
 	"redis-lite/data"
+	"strings"
 )
 
 func Replay(db *data.Database) error {
@@ -23,7 +24,11 @@ func Replay(db *data.Database) error {
 
 	fmt.Println("Replaying AOF...")
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimSpace(scanner.Text())
+
+		if line == "" {
+			continue
+		}
 
 		cmd, err := commands.ParseCommand(line)
 		if err != nil {
