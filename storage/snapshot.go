@@ -56,7 +56,14 @@ func LoadSnapshot() (map[string]data.Entry, error) {
 
 	fmt.Println("Loading snapshot...")
 	for scanner.Scan() {
-		args := strings.Split(scanner.Text(), " ")
+		line := strings.TrimSpace(scanner.Text())
+
+		if line == "" {
+			continue
+		}
+
+		args := strings.Split(line, " ")
+
 		if len(args) != 2 {
 			return snapshot, fmt.Errorf("invalid snapshot line: %q", scanner.Text())
 		}

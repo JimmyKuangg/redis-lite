@@ -52,6 +52,8 @@ Because I literally had no idea what it was or how to use it. So, what better wa
 
 ```bash
 # Terminal one
+# Keep an eye on this terminal!
+# It spits out operational logs
 go run .
 RedisLite listening on port 6379
 
@@ -66,4 +68,8 @@ name => Jimmy, TTL: <nil>
 DELETE name
 OK
 GET name
+key does not exist
+
+# To exit out and stop the server, press Ctrl + C on terminal one
+# This applies for both Windows and Mac
 ```
