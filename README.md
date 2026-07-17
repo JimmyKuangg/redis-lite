@@ -1,8 +1,8 @@
-# Redis Lite
+# RedisLite
 
-A minimal remake of Redis in Go that emphasizes education over robust usage.
+A minimal remake of Redis in Go that emphasizes education over covering all its existing features.
 
-RedisLite features only a subset of what Redis has to offer. The goal wasn't to replace Redis. It was to understand the underyling mechanisms and design decisions.
+RedisLite features only a subset of what Redis has to offer. The goal wasn't to replace Redis. It was to understand the underlying mechanisms and design decisions behind an in-memory database.
 
 ## Disclaimer
 
@@ -17,6 +17,7 @@ RedisLite is intentionally designed to be a learning project. It does not featur
 git clone https://github.com/JimmyKuangg/redis-lite.git
 cd redis-lite
 
+# Running the project
 go run .
 RedisLite listening on port 6379
 ```
@@ -25,9 +26,9 @@ RedisLite listening on port 6379
 
 - Localhost server to use TCP connections on port 6379
 - Commands such as `GET`, `SET`, and others that allow you to interact with the database (full list below)
-- Concurrency safe actions by using mutex's and locks
+- Concurrent-safe operations using mutexes and read/write locks
 - Data persistence and hydration via AOF and RDB files
-- TTL and clean up to allow for some memory clean up
+- TTL support with a background cleanup worker for expired keys
 
 ## Why Rebuild Redis?
 
@@ -58,14 +59,19 @@ go run .
 RedisLite listening on port 6379
 
 # In a separate terminal, terminal two
+# Connects you to the open port at 6379
 nc localhost 6379
+# Sets a key
 SET name Jimmy
 OK
+# Retrieves a key
 GET name
 Jimmy
+# Prints out the key value pairs of the database
 PRINT
 name => Jimmy, TTL: <nil>
-DELETE name
+# Deletes a key
+DEL name
 OK
 GET name
 key does not exist
@@ -73,3 +79,48 @@ key does not exist
 # To exit out and stop the server, press Ctrl + C on terminal one
 # This applies for both Windows and Mac
 ```
+
+## Project Structure
+
+`.redislite/`
+
+- Where the storage folders live. Take your time to watch the two files as you use commands in the CLI! It'll write to them automatically.
+- Try NOT to edit them. If you have issues with starting the server using `go run .`, delete this folder and run it again. Note that this will delete your data.
+
+`commands/`
+
+- The parsing and execution of the CLI command logic lives here.
+
+`data/`
+
+- Holds the logic behind the commands executed in the database.
+
+`server/`
+
+- All the logic for the actual "server" side of RedisLite sits here. The server starting, what it calls, how it handles the concurrent connections.
+
+`storage/`
+
+- The way the storage is handled within this remake. This includes the AOF and RDB files and also the hydration part of the server startup.
+
+## Limitations
+
+RedisLite intentionally does not contain all the robust features that the brilliant engineers at Redis spent years developing, such as:
+
+- Redis's single-threaded event loop
+- LRU memory management
+- A RESP protocol parser (I just parse strings)
+- Memory limits
+- Data sharding
+
+These features are beyond the scope of an educational project, but can be explored down the line.
+
+## Takeaways and Learnings
+
+Learned a lot about:
+
+- Mutex's and concurrency safety
+- Design around failure (What happens if a write fails? Too many writes? etc.)
+- A general idea of how Redis works
+
+RedisLite answered many of my original questions about Redis, but it also raised new ones. I didn't implement memory eviction, sharding, replication, or Redis's networking protocol, but understanding why those features exist was just as valuable as building the pieces I did. Those questions are what I'll be exploring next.
